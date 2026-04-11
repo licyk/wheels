@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wheels Repo - Licyk</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        :root {
+            --primary-color: #42b983;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #2c3e50;
+            --code-bg: #282c34;
+            --code-text: #abb2bf;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+
+        #app {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .description {
+            font-size: 1.1rem;
+            color: #666;
+        }
+
+        .grid {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            transition: transform 0.2s;
+            border: 1px solid #eee;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card h2 {
+            margin-top: 0;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .tag {
+            font-size: 0.8rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+            background: #e1f5fe;
+            color: #0288d1;
+            font-weight: normal;
+        }
+
+        .repo-url {
+            font-family: monospace;
+            background: #f1f1f1;
+            padding: 8px 12px;
+            border-radius: 6px;
+            display: block;
+            margin: 15px 0;
+            word-break: break-all;
+            font-size: 0.9rem;
+        }
+
+        .command-box {
+            position: relative;
+            background: var(--code-bg);
+            color: var(--code-text);
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Fira Code', 'Courier New', monospace;
+            margin-top: 10px;
+        }
+
+        .command-box code {
+            display: block;
+            padding-right: 40px;
+            font-size: 0.85rem;
+        }
+
+        .copy-btn {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: background 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .copy-btn.success {
+            background: var(--primary-color);
+        }
+
+        footer {
+            margin-top: 60px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #888;
+        }
+
+        .instructions {
+            margin-top: 40px;
+            background: #fff3cd;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 5px solid #ffecb5;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1>📦 Wheels Repository</h1>
+            <p class="description">由 GitHub Pages 托管的个人 PyPI 镜像源</p>
+        </header>
+
+        <main>
+            <div class="grid">
+                <div v-for="source in sources" :key="source.id" class="card">
+                    <h2>
+                        {{ source.name }}
+                        <span class="tag">{{ source.tag }}</span>
+                    </h2>
+                    <p>{{ source.desc }}</p>
+                    <span class="repo-url">{{ source.url }}</span>
+                    
+                    <div class="command-box">
+                        <code>pip install <span style="color: #e06c75;">package_name</span> {{ source.flag || '-i' }} {{ source.url }}</code>
+                        <button 
+                            @click="copyCommand(source.url, source.id, source.flag || '-i')" 
+                            :class="['copy-btn', { success: copiedId === source.id }]"
+                        >
+                            {{ copiedId === source.id ? '已复制' : '复制' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <section class="instructions">
+                <h3>💡 使用提示</h3>
+                <ul>
+                    <li>如果你想将此源设为默认，可以运行：<br>
+                        <code>pip config set global.index-url https://licyk.github.io/wheels/pypi</code>
+                    </li>
+                    <li>本项目主要收集了一些预编译的 Windows/Linux 平台轮子（如 <code>bitsandbytes</code>, <code>flash-attn</code> 等）。</li>
+                    <li><strong>Legacy Repo</strong> 使用 <code>-f</code> (find-links) 参数，它不是一个标准的索引源，而是一个包含链接的页面。</li>
+                </ul>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; 2026 <a href="https://github.com/licyk">licyk</a></p>
+        </footer>
+    </div>
+
+    <script>
+        const { createApp, ref } = Vue;
+
+        createApp({
+            setup() {
+                const copiedId = ref(null);
+                const sources = [
+                    {
+                        id: 'pypi',
+                        name: 'Main Repo',
+                        tag: 'GitHub',
+                        desc: '默认源。所有仓库内容完全一致，此源直接通过 GitHub 链路下载文件。',
+                        url: 'https://licyk.github.io/wheels/pypi'
+                    },
+                    {
+                        id: 'pypi_gh',
+                        name: 'GitHub Mirror',
+                        tag: 'Proxy',
+                        desc: 'GitHub 优化源。内容一致，使用 GitHub 内部或代理链路以优化特定网络下的下载。',
+                        url: 'https://licyk.github.io/wheels/pypi_gh'
+                    },
+                    {
+                        id: 'pypi_hf',
+                        name: 'HuggingFace Source',
+                        tag: 'HF',
+                        desc: 'HF 链路源。内容一致，但下载请求将重定向至 HuggingFace 存储服务器。',
+                        url: 'https://licyk.github.io/wheels/pypi_hf'
+                    },
+                    {
+                        id: 'pypi_hf_mirror',
+                        name: 'HF Mirror',
+                        tag: 'Mirror',
+                        desc: 'HF 镜像源。内容一致，文件下载指向 HuggingFace 镜像站，适合国内网络。',
+                        url: 'https://licyk.github.io/wheels/pypi_hf_mirror'
+                    },
+                    {
+                        id: 'pypi_legecy',
+                        name: 'Legacy Repo',
+                        tag: 'Legacy',
+                        desc: '旧版/兼容性源。内容与上述源一致，但需使用 --find-links 方式访问。',
+                        url: 'https://licyk.github.io/wheels/pypi_legecy',
+                        flag: '-f'
+                    }
+                ];
+
+                const copyCommand = (url, id, flag) => {
+                    const command = `pip install package_name ${flag} ${url}`;
+                    navigator.clipboard.writeText(command).then(() => {
+                        copiedId.value = id;
+                        setTimeout(() => {
+                            copiedId.value = null;
+                        }, 2000);
+                    });
+                };
+
+                return {
+                    sources,
+                    copyCommand,
+                    copiedId
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
